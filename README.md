@@ -1,0 +1,1 @@
+Questo repository contiene un'implementazione di una semplice chat basata su TCP utilizzando Python. Il progetto include sia il codice per il server, che gestisce le connessioni dei client e inoltra i messaggi, sia il codice per il client, che consente agli utenti di connettersi al server e inviare messaggi in tempo reale.

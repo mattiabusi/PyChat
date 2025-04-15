@@ -4,7 +4,6 @@ import threading
 SERVER_HOST = '127.0.0.1'
 SERVER_PORT = 12345
 
-
 def receive_messages(sock):
     while True:
         try:
@@ -14,7 +13,6 @@ def receive_messages(sock):
             print(msg)
         except:
             break
-
 
 def main():
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -27,9 +25,8 @@ def main():
             msg = input()
             client.sendall(msg.encode())
     except KeyboardInterrupt:
-        print("Disconnessione...")
+        print(" Disconnessione...")
         client.close()
-
 
 if __name__ == "__main__":
     main()

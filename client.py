@@ -1,15 +1,35 @@
 import socket
+import threading
 
-server_address = ('127.0.0.1', 65535)
+SERVER_HOST = '127.0.0.1'
+SERVER_PORT = 12345
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
-    client_socket.connect(server_address)
 
+def receive_messages(sock):
     while True:
-        message = input("Inserisci un messaggio (o 'exit' per uscire): ")
-        if message.lower() == 'exit':
+        try:
+            msg = sock.recv(1024).decode()
+            if not msg:
+                break
+            print(msg)
+        except:
             break
 
-        client_socket.sendall(message.encode())
-        data = client_socket.recv(4096)
-        print(f"Risposta dal server: {data.decode()}")
+
+def main():
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client.connect((SERVER_HOST, SERVER_PORT))
+
+    threading.Thread(target=receive_messages, args=(client,), daemon=True).start()
+
+    try:
+        while True:
+            msg = input()
+            client.sendall(msg.encode())
+    except KeyboardInterrupt:
+        print("Disconnessione...")
+        client.close()
+
+
+if __name__ == "__main__":
+    main()

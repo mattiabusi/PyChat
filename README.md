@@ -1,1 +1,15 @@
-Questo repository contiene un'implementazione di una semplice chat basata su TCP utilizzando Python. Il progetto include sia il codice per il server, che gestisce le connessioni dei client e inoltra i messaggi, sia il codice per il client, che consente agli utenti di connettersi al server e inviare messaggi in tempo reale.
+Come giocatore:
+Voglio potermi connettere al server inserendo il mio nickname, così da poter partecipare al gioco con altri utenti.
+Voglio vedere i messaggi del server e degli altri giocatori in una chat, in ordine cronologico, per seguire lo svolgimento del gioco.
+Voglio visualizzare la classifica dei punteggi aggiornata, così da sapere chi sta vincendo.
+Voglio che la classifica venga aggiornata automaticamente, senza dover fare nulla, così da avere sempre informazioni aggiornate.
+
+Come server:
+Voglio gestire le connessioni dei client, assegnando un nickname ad ogni giocatore connesso.
+Voglio mantenere e aggiornare i punteggi dei giocatori in tempo reale, così da poter mostrare la classifica corretta.
+Voglio inviare messaggi a tutti i client, in modo da condividere aggiornamenti o risultati.
+Voglio scegliere casualmente una parola da indovinare da una lista, per rendere il gioco variabile e interessante.
+Voglio mostrare lo stato parziale della parola in base alle lettere indovinate, per guidare i giocatori nel gioco.
+
+Come sistema:
+Voglio che più client possano connettersi contemporaneamente senza che si verifichino errori o crash.

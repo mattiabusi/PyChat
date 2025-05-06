@@ -17,5 +17,9 @@ Voglio scegliere casualmente una parola da indovinare da una lista, per rendere 
 Voglio mostrare lo stato parziale della parola in base alle lettere indovinate, per guidare i giocatori nel gioco.
 Voglio che più client possano connettersi contemporaneamente senza che si verifichino errori o crash.
 
+link presentazione canva: 
+https://www.canva.com/design/DAGms47q7WU/O0z9AnNej4XyCsrWPS_mtw/edit?utm_content=DAGms47q7WU&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
+
+
 
 

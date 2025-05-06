@@ -15,7 +15,7 @@ volio poter salvare il punteggio in un file txt
 Voglio inviare messaggi a tutti i client, in modo da condividere aggiornamenti o risultati.
 Voglio scegliere casualmente una parola da indovinare da una lista, per rendere il gioco variabile e interessante.
 Voglio mostrare lo stato parziale della parola in base alle lettere indovinate, per guidare i giocatori nel gioco.
-
-
-Come sistema:
 Voglio che più client possano connettersi contemporaneamente senza che si verifichino errori o crash.
+
+
+

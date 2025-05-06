@@ -1,6 +1,6 @@
 Questo è un progetto realizzato in Python che implementa un semplice gioco multiplayer basato su parole, con funzionalità client-server. Il gioco consente a più utenti di connettersi a un server centrale, partecipare in tempo reale, scambiarsi messaggi e visualizzare una classifica aggiornata in base ai punteggi. L’interfaccia grafica lato client è realizzata con la libreria Dear PyGui, mentre la logica di rete utilizza i socket TCP per la comunicazione tra client e server.
 
-
+USER STORIES
 Come giocatore:
 Voglio potermi connettere al server inserendo il mio nickname, così da poter partecipare al gioco con altri utenti.
 Voglio vedere i messaggi del server e degli altri giocatori in una chat, in ordine cronologico, per seguire lo svolgimento del gioco.

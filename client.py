@@ -5,136 +5,136 @@ import sys
 import time
 from dearpygui import dearpygui as dpg
 
-SERVER_HOST = '192.168.1.50'
-SERVER_PORT = 12345
+INDIRIZZO_SERVER = '192.168.1.50'
+PORTA_SERVER = 12345
 client = None
-nickname = ""
-connected = False
+soprannome = ""
+connesso = False
 
-def log_to_output(msg):
-    timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-    dpg.add_text(f"[{timestamp}] {msg}", parent="ChatScroll")
-    scroll_amount = dpg.get_item_height("ChatScroll")
-    dpg.set_y_scroll("ChatScroll", scroll_amount)
+def registra_messaggio(messaggio):
+    orario = datetime.datetime.now().strftime("%H:%M:%S")
+    dpg.add_text(f"[{orario}] {messaggio}", parent="ScorrimentoChat")
+    altezza_scorrimento = dpg.get_item_height("ScorrimentoChat")
+    dpg.set_y_scroll("ScorrimentoChat", altezza_scorrimento)
 
-def update_score_table(msg):
+def aggiorna_classifica(messaggio):
     try:
-        dpg.delete_item("ScoreTable", children_only=True)
+        dpg.delete_item("TabellaClassifica", children_only=True)
     except:
         pass
-    data = msg.replace("[SCORE_DATA]", "").strip()
-    if not data:
+    dati = messaggio.replace("[DATI_CLASSIFICA]", "").strip()
+    if not dati:
         return
-    score_data = []
-    for line in data.split("\n"):
-        if ":" in line:
-            name, points = line.strip().split(":")
-            score_data.append((name, int(points)))
-    score_data.sort(key=lambda x: x[1], reverse=True)
-    for name, points in score_data:
-        with dpg.table_row(parent="ScoreTable"):
-            dpg.add_text(name)
-            dpg.add_text(str(points))
+    punteggi = []
+    for riga in dati.split("\n"):
+        if ":" in riga:
+            nome, punti = riga.strip().split(":")
+            punteggi.append((nome, int(punti)))
+    punteggi.sort(key=lambda x: x[1], reverse=True)
+    for nome, punti in punteggi:
+        with dpg.table_row(parent="TabellaClassifica"):
+            dpg.add_text(nome)
+            dpg.add_text(str(punti))
 
-def receive_messages():
-    global connected
-    while connected:
+def ricevi_messaggi():
+    global connesso
+    while connesso:
         try:
-            msg = client.recv(1024).decode()
-            if not msg:
+            messaggio = client.recv(1024).decode()
+            if not messaggio:
                 break
-            if msg.startswith("[SCORE_DATA]"):
-                update_score_table(msg)
+            if messaggio.startswith("[DATI_CLASSIFICA]"):
+                aggiorna_classifica(messaggio)
             else:
-                log_to_output(msg)
+                registra_messaggio(messaggio)
         except Exception as e:
-            if connected:
-                log_to_output(f"❌ Errore di connessione: {str(e)}")
+            if connesso:
+                registra_messaggio(f"❌ Errore di connessione: {str(e)}")
             break
-    if connected:
-        connected = False
-        log_to_output("❌ Connessione al server persa.")
-        dpg.configure_item("ReconnectButton", show=True)
+    if connesso:
+        connesso = False
+        registra_messaggio("❌ Connessione al server persa.")
+        dpg.configure_item("PulsanteRiconnessione", show=True)
 
-def send_callback():
-    global nickname, connected
-    if not connected:
-        log_to_output("❌ Non sei connesso al server.")
+def invia_messaggio():
+    global soprannome, connesso
+    if not connesso:
+        registra_messaggio("❌ Non sei connesso al server.")
         return
-    message = dpg.get_value("Input").strip()
-    if not message:
+    messaggio = dpg.get_value("InputTesto").strip()
+    if not messaggio:
         return
-    if message.startswith("/"):
-        if message == "/clear" or message == "/pulisci":
-            dpg.delete_item("ChatScroll", children_only=True)
-            log_to_output("🧹 Chat pulita.")
-        elif message == "/nome":
-            log_to_output(f"👤 Il tuo nickname è: {nickname}")
-        elif message == "/time" or message == "/ora":
-            log_to_output(f"🕒 Orario attuale: {datetime.datetime.now().strftime('%H:%M:%S')}")
-        elif message == "/exit" or message == "/esci":
-            exit_game()
+    if messaggio.startswith("/"):
+        if messaggio == "/clear" or messaggio == "/pulisci":
+            dpg.delete_item("ScorrimentoChat", children_only=True)
+            registra_messaggio("🧹 Chat pulita.")
+        elif messaggio == "/nome":
+            registra_messaggio(f"👤 Il tuo soprannome è: {soprannome}")
+        elif messaggio == "/time" or messaggio == "/ora":
+            registra_messaggio(f"🕒 Orario attuale: {datetime.datetime.now().strftime('%H:%M:%S')}")
+        elif messaggio == "/exit" or messaggio == "/esci":
+            termina_gioco()
         else:
             try:
-                client.sendall(message.encode())
+                client.sendall(messaggio.encode())
             except:
-                log_to_output("❌ Errore durante l'invio del comando.")
+                registra_messaggio("❌ Errore durante l'invio del comando.")
     else:
         try:
-            client.sendall(message.encode())
+            client.sendall(messaggio.encode())
         except:
-            log_to_output("❌ Errore durante l'invio.")
-    dpg.set_value("Input", "")
+            registra_messaggio("❌ Errore durante l'invio.")
+    dpg.set_value("InputTesto", "")
 
-def connect_to_server():
-    global client, nickname, connected
-    nickname = dpg.get_value("Nickname").strip()
-    if not nickname:
-        log_to_output("❌ Inserisci un nickname valido.")
+def connetti_al_server():
+    global client, soprannome, connesso
+    soprannome = dpg.get_value("InputSoprannome").strip()
+    if not soprannome:
+        registra_messaggio("❌ Inserisci un soprannome valido.")
         return
-    if len(nickname) < 3:
-        log_to_output("❌ Il nickname deve avere almeno 3 caratteri.")
+    if len(soprannome) < 3:
+        registra_messaggio("❌ Il soprannome deve avere almeno 3 caratteri.")
         return
-    log_to_output(f"🔄 Tentativo di connessione al server {SERVER_HOST}:{SERVER_PORT}...")
+    registra_messaggio(f"🔄 Tentativo di connessione al server {INDIRIZZO_SERVER}:{PORTA_SERVER}...")
     try:
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect((SERVER_HOST, SERVER_PORT))
+        client.connect((INDIRIZZO_SERVER, PORTA_SERVER))
         client.recv(1024)
-        client.sendall(nickname.encode())
-        connected = True
-        log_to_output("✅ Connessione al server riuscita!")
+        client.sendall(soprannome.encode())
+        connesso = True
+        registra_messaggio("✅ Connessione al server riuscita!")
     except Exception as e:
-        log_to_output(f"❌ Connessione fallita: {str(e)}")
+        registra_messaggio(f"❌ Connessione fallita: {str(e)}")
         return
-    threading.Thread(target=receive_messages, daemon=True).start()
-    dpg.hide_item("LoginWindow")
-    dpg.show_item("GameWindow")
-    dpg.configure_item("ReconnectButton", show=False)
-    log_to_output(f"🎉 Benvenuto nel gioco, {nickname}! Indovina la parola segreta.")
+    threading.Thread(target=ricevi_messaggi, daemon=True).start()
+    dpg.hide_item("FinestraLogin")
+    dpg.show_item("FinestraGioco")
+    dpg.configure_item("PulsanteRiconnessione", show=False)
+    registra_messaggio(f"🎉 Benvenuto nel gioco, {soprannome}! Indovina la parola segreta.")
 
-def exit_game():
-    global connected
+def termina_gioco():
+    global connesso
     try:
-        if connected and client:
+        if connesso and client:
             client.sendall("/exit".encode())
-            connected = False
+            connesso = False
             client.close()
     except:
         pass
-    log_to_output("👋 Uscita dal gioco.")
+    registra_messaggio("👋 Uscita dal gioco.")
     time.sleep(1)
     dpg.stop_dearpygui()
     sys.exit()
 
-def reconnect():
-    global connected
-    if connected:
+def riconnetti():
+    global connesso
+    if connesso:
         return
-    connect_to_server()
+    connetti_al_server()
 
 def main():
     dpg.create_context()
-    with dpg.theme() as global_theme:
+    with dpg.theme() as tema_globale:
         with dpg.theme_component(dpg.mvAll):
             dpg.add_theme_color(dpg.mvThemeCol_WindowBg, [32, 32, 32, 255])
             dpg.add_theme_color(dpg.mvThemeCol_TitleBg, [25, 90, 140, 255])
@@ -143,38 +143,43 @@ def main():
             dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, [70, 140, 210, 255])
             dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 5)
             dpg.add_theme_style(dpg.mvStyleVar_WindowRounding, 5)
-    dpg.bind_theme(global_theme)
-    with dpg.window(label="Login - Indovina la Parola", tag="LoginWindow", width=350, height=200, no_close=True):
+    dpg.bind_theme(tema_globale)
+    
+    with dpg.window(label="Login - Indovina la Parola", tag="FinestraLogin", width=350, height=200, no_close=True):
         dpg.add_text("Benvenuto nel gioco 'Indovina la Parola'!")
-        dpg.add_text("Inserisci un nickname per connetterti.")
+        dpg.add_text("Inserisci un soprannome per connetterti.")
         dpg.add_separator()
         dpg.add_spacer(height=10)
-        dpg.add_input_text(label="Nickname", tag="Nickname", hint="Inserisci almeno 3 caratteri")
+        dpg.add_input_text(label="Soprannome", tag="InputSoprannome", hint="Inserisci almeno 3 caratteri")
         dpg.add_spacer(height=10)
         with dpg.group(horizontal=True):
-            dpg.add_button(label="Connetti", callback=connect_to_server, width=150)
-            dpg.add_button(label="Esci", callback=exit_game, width=150)
-    with dpg.window(label="Indovina la Parola", tag="GameWindow", width=800, height=600, show=False, no_close=True):
+            dpg.add_button(label="Connetti", callback=connetti_al_server, width=150)
+            dpg.add_button(label="Esci", callback=termina_gioco, width=150)
+    
+    with dpg.window(label="Indovina la Parola", tag="FinestraGioco", width=800, height=600, show=False, no_close=True):
         with dpg.group(horizontal=True):
-            with dpg.child_window(tag="ChatScroll", width=550, height=450):
+            with dpg.child_window(tag="ScorrimentoChat", width=550, height=450):
                 dpg.add_text("Benvenuto nel gioco 'Indovina la Parola'!")
                 dpg.add_text("Connettiti al server per iniziare.")
             with dpg.child_window(width=230, height=450):
                 dpg.add_text("🏆 Classifica:", bullet=True)
-                with dpg.table(tag="ScoreTable", header_row=True, resizable=True,
-                               borders_innerH=True, borders_outerH=True, borders_innerV=True, borders_outerV=True,
-                               width=220, height=400):
+                with dpg.table(tag="TabellaClassifica", header_row=True, resizable=True,
+                             borders_innerH=True, borders_outerH=True, borders_innerV=True, borders_outerV=True,
+                             width=220, height=400):
                     dpg.add_table_column(label="Giocatore", width_fixed=True, init_width_or_weight=120)
                     dpg.add_table_column(label="Punti", width_fixed=True, init_width_or_weight=80)
                 dpg.add_spacer(height=10)
                 dpg.add_button(label="Aggiorna Classifica",
-                               callback=lambda: client.sendall("/score".encode()) if connected else None, width=220)
+                             callback=lambda: client.sendall("/score".encode()) if connesso else None, width=220)
+        
         with dpg.group(horizontal=True):
-            dpg.add_input_text(tag="Input", width=640, on_enter=True, callback=send_callback,
-                               hint="Messaggio / Lettera / Parola / Comando")
-            dpg.add_button(label="Invia", callback=send_callback, width=70)
-            dpg.add_button(label="Esci", callback=exit_game, width=70)
-        dpg.add_button(label="Riconnetti", callback=reconnect, tag="ReconnectButton", width=100, show=False)
+            dpg.add_input_text(tag="InputTesto", width=640, on_enter=True, callback=invia_messaggio,
+                             hint="Messaggio / Lettera / Parola / Comando")
+            dpg.add_button(label="Invia", callback=invia_messaggio, width=70)
+            dpg.add_button(label="Esci", callback=termina_gioco, width=70)
+        
+        dpg.add_button(label="Riconnetti", callback=riconnetti, tag="PulsanteRiconnessione", width=100, show=False)
+        
         with dpg.collapsing_header(label="Comandi e istruzioni", default_open=True):
             dpg.add_text("🎯 Come giocare:")
             dpg.add_text("1. Indovina la parola segreta proposta dal server")
@@ -189,10 +194,11 @@ def main():
             dpg.add_separator()
             dpg.add_text("🖥 Comandi client:")
             dpg.add_text("/clear o /pulisci - Pulisce la chat")
-            dpg.add_text("/nome - Mostra il tuo nickname")
+            dpg.add_text("/nome - Mostra il tuo soprannome")
             dpg.add_text("/time o /ora - Mostra l'ora attuale")
             dpg.add_text("/exit o /esci - Esce dal gioco")
-    dpg.set_primary_window("LoginWindow", True)
+    
+    dpg.set_primary_window("FinestraLogin", True)
     dpg.create_viewport(title="Indovina la Parola", width=820, height=650)
     dpg.setup_dearpygui()
     dpg.show_viewport()

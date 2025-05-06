@@ -3,221 +3,237 @@ import threading
 import random
 import time
 
-HOST = '192.168.1.50'
-PORT = 12345
-clients = {}
-scores = {}
-word_list = ["python", "programmazione", "computer", "algoritmo", "sviluppatore", "intelligenza"]
-current_word = random.choice(word_list)
-guessed_letters = set()
-game_over = False
-lock = threading.Lock()
-SCORES_FILE = "scores.txt"
+INDIRIZZO_SERVER = '192.168.1.50'
+PORTA = 12345
+client_connessi = {}  # {conn: nickname}
+punteggi = {}  # {nickname: punteggio}
+lista_parole = ["python", "programmazione", "computer", "algoritmo", "sviluppatore", "intelligenza"]
+parola_corrente = random.choice(lista_parole)
+lettere_indovinate = set()
+gioco_terminato = False
+blocco = threading.Lock()
+FILE_PUNTEGGI = "scores.txt"
 
-def broadcast(message, exclude_conn=None):
-    for conn in clients:
-        if conn != exclude_conn:
+def trasmette(messaggio, escludi_client=None):
+    for conn in client_connessi:
+        if conn != escludi_client:
             try:
-                conn.sendall(message.encode())
+                conn.sendall(messaggio.encode())
             except:
                 pass
 
-def send_score_update():
-    sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-    score_data = "[SCORE_DATA]"
-    for name, points in sorted_scores:
-        score_data += f"{name}:{points}\n"
-    for conn in clients:
+def aggiorna_classifica():
+    punteggi_ordinati = sorted(punteggi.items(), key=lambda x: x[1], reverse=True)
+    dati_classifica = "[DATI_CLASSIFICA]"
+    for nome, punti in punteggi_ordinati:
+        dati_classifica += f"{nome}:{punti}\n"
+    for conn in client_connessi:
         try:
-            conn.sendall(score_data.encode())
+            conn.sendall(dati_classifica.encode())
         except:
             pass
 
-def get_word_progress():
-    progress = []
-    for letter in current_word:
-        if letter in guessed_letters:
-            progress.append(letter)
+def stato_parola():
+    progresso = []
+    for lettera in parola_corrente:
+        if lettera in lettere_indovinate:
+            progresso.append(lettera)
         else:
-            progress.append("_")
-    return " ".join(progress)
+            progresso.append("_")
+    return " ".join(progresso)
 
-def handle_client(conn, addr):
-    global game_over, current_word, guessed_letters
+def gestisci_client(conn, addr):
+    global gioco_terminato, parola_corrente, lettere_indovinate
     try:
         conn.sendall("🎮 Benvenuto! Inserisci il tuo nickname: ".encode())
         nickname = conn.recv(1024).decode().strip()
-        while nickname in [name for name in clients.values()]:
+
+        while nickname in [nome for nome in client_connessi.values()]:
             conn.sendall("❌ Nickname già in uso. Inserisci un nuovo nickname: ".encode())
             nickname = conn.recv(1024).decode().strip()
-        clients[conn] = nickname
-        if nickname not in scores:
-            scores[nickname] = 0
-            save_scores()
-        welcome = f"👋 {nickname} si è unito al gioco!"
-        print(welcome)
-        broadcast(f"{welcome}\n")
-        conn.sendall(f"🎯 Indovina la parola segreta! ({len(current_word)} lettere)\n".encode())
-        conn.sendall(f"Parola: {get_word_progress()}\n".encode())
-        send_score_update()
+
+        client_connessi[conn] = nickname
+
+        if nickname not in punteggi:
+            punteggi[nickname] = 0
+            salva_punteggi()
+
+        benvenuto = f"👋 {nickname} si è unito al gioco!"
+        print(benvenuto)
+        trasmette(f"{benvenuto}\n")
+
+        conn.sendall(f"🎯 Indovina la parola segreta! ({len(parola_corrente)} lettere)\n".encode())
+        conn.sendall(f"Parola: {stato_parola()}\n".encode())
+
+        aggiorna_classifica()
+
         while True:
-            msg = conn.recv(1024).decode().strip().lower()
-            if msg.startswith("/"):
-                handle_command(msg, conn, nickname)
+            messaggio = conn.recv(1024).decode().strip().lower()
+
+            if messaggio.startswith("/"):
+                gestisci_comando(messaggio, conn, nickname)
                 continue
-            if game_over:
+
+            if gioco_terminato:
                 conn.sendall("⏳ Attendi che inizi una nuova partita...\n".encode())
                 continue
-            if len(msg) == 1 and msg.isalpha():
-                handle_letter_guess(msg, conn, nickname)
-            elif len(msg) > 1 and msg.isalpha():
-                handle_word_guess(msg, conn, nickname)
+
+            if len(messaggio) == 1 and messaggio.isalpha():
+                gestisci_lettera(messaggio, conn, nickname)
+            elif len(messaggio) > 1 and messaggio.isalpha():
+                gestisci_parola(messaggio, conn, nickname)
             else:
-                broadcast(f"💬 {nickname}: {msg}\n", exclude_conn=None)
+                trasmette(f"💬 {nickname}: {messaggio}\n", exclude_conn=None)
+
     except Exception as e:
         print(f"[ERRORE] {e}")
     finally:
-        if conn in clients:
-            nickname = clients[conn]
+        if conn in client_connessi:
+            nickname = client_connessi[conn]
             print(f"[DISCONNESSO] {nickname}")
-            broadcast(f"👋 {nickname} si è disconnesso.\n")
-            clients.pop(conn, None)
+            trasmette(f"👋 {nickname} si è disconnesso.\n")
+            client_connessi.pop(conn, None)
+
         try:
             conn.close()
         except:
             pass
 
-def handle_letter_guess(letter, conn, nickname):
-    global game_over, guessed_letters
-    with lock:
-        if letter in guessed_letters:
-            conn.sendall(f"ℹ️ La lettera '{letter}' è già stata provata!\n".encode())
-            return
-        guessed_letters.add(letter)
-        if letter in current_word:
-            conn.sendall(f"✅ Bravo! La lettera '{letter}' è presente nella parola!\n".encode())
-            broadcast(f"✨ {nickname} ha indovinato la lettera '{letter}'!\n", exclude_conn=conn)
-            word_progress = get_word_progress()
-            broadcast(f"Parola: {word_progress}\n")
-            if "_" not in word_progress:
-                handle_word_guess(current_word, conn, nickname)
-        else:
-            conn.sendall(f"❌ La lettera '{letter}' non è presente nella parola.\n".encode())
-            broadcast(f"💢 {nickname} ha provato la lettera '{letter}' (non presente)\n", exclude_conn=conn)
+def gestisci_lettera(lettera, conn, nickname):
+    global gioco_terminato, lettere_indovinate
 
-def handle_word_guess(word, conn, nickname):
-    global game_over, scores
-    with lock:
-        if word == current_word:
-            game_over = True
-            scores[nickname] = scores.get(nickname, 0) + 1
-            save_scores()
-            victory_message = f"\n🎉 {nickname} ha indovinato la parola '{current_word}'! Guadagna 1 punto! 🎉\n"
-            broadcast(victory_message)
-            print(f"[VINCITORE] {nickname} ha indovinato '{current_word}'")
-            send_score_update()
-            threading.Timer(5.0, restart_game).start()
+    with blocco:
+        if lettera in lettere_indovinate:
+            conn.sendall(f"ℹ️ La lettera '{lettera}' è già stata provata!\n".encode())
+            return
+
+        lettere_indovinate.add(lettera)
+
+        if lettera in parola_corrente:
+            conn.sendall(f"✅ Bravo! La lettera '{lettera}' è presente nella parola!\n".encode())
+            trasmette(f"✨ {nickname} ha indovinato la lettera '{lettera}'!\n", exclude_conn=conn)
+            progresso = stato_parola()
+            trasmette(f"Parola: {progresso}\n")
+            if "_" not in progresso:
+                gestisci_parola(parola_corrente, conn, nickname)
+        else:
+            conn.sendall(f"❌ La lettera '{lettera}' non è presente nella parola.\n".encode())
+            trasmette(f"💢 {nickname} ha provato la lettera '{lettera}' (non presente)\n", exclude_conn=conn)
+
+def gestisci_parola(parola, conn, nickname):
+    global gioco_terminato, punteggi
+
+    with blocco:
+        if parola == parola_corrente:
+            gioco_terminato = True
+            punteggi[nickname] = punteggi.get(nickname, 0) + 1
+            salva_punteggi()
+            messaggio_vittoria = f"\n🎉 {nickname} ha indovinato la parola '{parola_corrente}'! Guadagna 1 punto! 🎉\n"
+            trasmette(messaggio_vittoria)
+            print(f"[VINCITORE] {nickname} ha indovinato '{parola_corrente}'")
+            aggiorna_classifica()
+            threading.Timer(5.0, riavvia_gioco).start()
         else:
             conn.sendall("❌ Non è la parola corretta. Prova ancora!\n".encode())
-            broadcast(f"💢 {nickname} ha provato la parola '{word}' (errata)\n", exclude_conn=conn)
+            trasmette(f"💢 {nickname} ha provato la parola '{parola}' (errata)\n", exclude_conn=conn)
 
-def handle_command(msg, conn, nickname):
-    if msg == "/score" or msg == "/classifica":
-        score_list = "\n".join([f"{name}: {points}" for name, points in sorted(scores.items(), key=lambda x: x[1], reverse=True)])
-        conn.sendall(f"\n🏆 Classifica:\n{score_list}\n".encode())
-        send_score_update()
-    elif msg == "/help":
-        help_text = "\n📋 Comandi disponibili:\n"
-        help_text += "/help - mostra questo messaggio di aiuto\n"
-        help_text += "/score o /classifica - mostra la classifica dei giocatori\n"
-        help_text += "/hint - mostra un suggerimento (una lettera casuale non ancora indovinata)\n"
-        help_text += "/online - mostra i giocatori connessi\n"
-        help_text += "\nPer giocare: scrivi una lettera o prova a indovinare la parola intera\n"
-        help_text += "Per chattare: scrivi un messaggio qualsiasi (non una lettera o parola)\n"
-        conn.sendall(help_text.encode())
-    elif msg == "/hint":
-        remaining_letters = [letter for letter in current_word if letter not in guessed_letters]
-        if remaining_letters:
-            hint = random.choice(remaining_letters)
-            conn.sendall(f"💡 Suggerimento: prova la lettera '{hint}'\n".encode())
+def gestisci_comando(messaggio, conn, nickname):
+    if messaggio == "/score" or messaggio == "/classifica":
+        lista_punteggi = "\n".join([f"{nome}: {punti}" for nome, punti in sorted(punteggi.items(), key=lambda x: x[1], reverse=True)])
+        conn.sendall(f"\n🏆 Classifica:\n{lista_punteggi}\n".encode())
+        aggiorna_classifica()
+    elif messaggio == "/help":
+        testo_aiuto = "\n📋 Comandi disponibili:\n"
+        testo_aiuto += "/help - mostra questo messaggio di aiuto\n"
+        testo_aiuto += "/score o /classifica - mostra la classifica dei giocatori\n"
+        testo_aiuto += "/hint - mostra un suggerimento (una lettera casuale non ancora indovinata)\n"
+        testo_aiuto += "/online - mostra i giocatori connessi\n"
+        testo_aiuto += "\nPer giocare: scrivi una lettera o prova a indovinare la parola intera\n"
+        testo_aiuto += "Per chattare: scrivi un messaggio qualsiasi (non una lettera o parola)\n"
+        conn.sendall(testo_aiuto.encode())
+    elif messaggio == "/hint":
+        lettere_rimanenti = [lettera for lettera in parola_corrente if lettera not in lettere_indovinate]
+        if lettere_rimanenti:
+            suggerimento = random.choice(lettere_rimanenti)
+            conn.sendall(f"💡 Suggerimento: prova la lettera '{suggerimento}'\n".encode())
         else:
             conn.sendall("ℹ️ Tutte le lettere sono già state indovinate!\n".encode())
-    elif msg == "/online":
-        online_list = ", ".join(clients.values())
-        conn.sendall(f"👥 Giocatori online: {online_list}\n".encode())
-    elif msg.startswith("/kick ") and nickname in ["admin", "moderatore"]:
-        target = msg.split(" ", 1)[1].strip()
-        for c, nick in clients.items():
+    elif messaggio == "/online":
+        lista_online = ", ".join(client_connessi.values())
+        conn.sendall(f"👥 Giocatori online: {lista_online}\n".encode())
+    elif messaggio.startswith("/kick ") and nickname in ["admin", "moderatore"]:
+        target = messaggio.split(" ", 1)[1].strip()
+        for c, nick in client_connessi.items():
             if nick == target:
-                broadcast(f"👢 {target} è stato espulso dal gioco.\n")
+                trasmette(f"👢 {target} è stato espulso dal gioco.\n")
                 try:
                     c.sendall("👢 Sei stato espulso dal gioco.\n".encode())
                     c.close()
                 except:
                     pass
-                clients.pop(c, None)
+                client_connessi.pop(c, None)
                 return
         conn.sendall(f"❌ Giocatore {target} non trovato.\n".encode())
     else:
         conn.sendall("❓ Comando sconosciuto. Scrivi /help per assistenza.\n".encode())
 
-def restart_game():
-    global current_word, guessed_letters, game_over
-    with lock:
-        current_word = random.choice(word_list)
-        guessed_letters = set()
-        game_over = False
-        broadcast(f"\n🔄 Nuova partita iniziata! Indovina la parola ({len(current_word)} lettere)\n")
-        broadcast(f"Parola: {get_word_progress()}\n")
-        print(f"[NUOVA PARTITA] Parola segreta: {current_word}")
+def riavvia_gioco():
+    global parola_corrente, lettere_indovinate, gioco_terminato
+    with blocco:
+        parola_corrente = random.choice(lista_parole)
+        lettere_indovinate = set()
+        gioco_terminato = False
+        trasmette(f"\n🔄 Nuova partita iniziata! Indovina la parola ({len(parola_corrente)} lettere)\n")
+        trasmette(f"Parola: {stato_parola()}\n")
+        print(f"[NUOVA PARTITA] Parola segreta: {parola_corrente}")
 
-def load_scores():
+def carica_punteggi():
     try:
-        with open(SCORES_FILE, "r") as f:
-            for line in f:
-                if ":" in line:
-                    name, points = line.strip().split(":")
-                    scores[name] = int(points)
-        print(f"[INFO] Punteggi caricati da {SCORES_FILE}")
+        with open(FILE_PUNTEGGI, "r") as f:
+            for linea in f:
+                if ":" in linea:
+                    nome, punti = linea.strip().split(":")
+                    punteggi[nome] = int(punti)
+        print(f"[INFO] Punteggi caricati da {FILE_PUNTEGGI}")
     except FileNotFoundError:
-        print(f"[INFO] File {SCORES_FILE} non trovato, verrà creato")
+        print(f"[INFO] File {FILE_PUNTEGGI} non trovato, verrà creato")
     except Exception as e:
         print(f"[ERRORE] Impossibile caricare i punteggi: {e}")
 
-def save_scores():
+def salva_punteggi():
     try:
-        with open(SCORES_FILE, "w") as f:
-            for name, points in scores.items():
-                f.write(f"{name}:{points}\n")
+        with open(FILE_PUNTEGGI, "w") as f:
+            for nome, punti in punteggi.items():
+                f.write(f"{nome}:{punti}\n")
     except Exception as e:
         print(f"[ERRORE] Impossibile salvare i punteggi: {e}")
 
 def main():
-    load_scores()
+    carica_punteggi()
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
-        server.bind((HOST, PORT))
+        server.bind((INDIRIZZO_SERVER, PORTA))
         server.listen(5)
-        print(f"[SERVER AVVIATO] Ascolto su {HOST}:{PORT}")
-        print(f"[INFO] Parola iniziale da indovinare: {current_word}")
+        print(f"[SERVER AVVIATO] Ascolto su {INDIRIZZO_SERVER}:{PORTA}")
+        print(f"[INFO] Parola iniziale da indovinare: {parola_corrente}")
         while True:
             conn, addr = server.accept()
             print(f"[NUOVA CONNESSIONE] {addr}")
-            threading.Thread(target=handle_client, args=(conn, addr), daemon=True).start()
+            threading.Thread(target=gestisci_client, args=(conn, addr), daemon=True).start()
     except KeyboardInterrupt:
         print("\n[SERVER] Arresto in corso...")
     except Exception as e:
         print(f"[ERRORE FATALE] {e}")
     finally:
-        for conn in clients.copy():
+        for conn in client_connessi.copy():
             try:
                 conn.close()
             except:
                 pass
         server.close()
         print("[SERVER] Arrestato.")
-        save_scores()
+        salva_punteggi()
 
 if __name__ == "__main__":
     main()

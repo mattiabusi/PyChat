@@ -11,6 +11,7 @@ Voglio che la classifica venga aggiornata automaticamente, senza dover fare null
 Come server:
 Voglio gestire le connessioni dei client, assegnando un nickname ad ogni giocatore connesso.
 Voglio mantenere e aggiornare i punteggi dei giocatori in tempo reale, così da poter mostrare la classifica corretta.
+volio poter salvare il punteggio in un file txt 
 Voglio inviare messaggi a tutti i client, in modo da condividere aggiornamenti o risultati.
 Voglio scegliere casualmente una parola da indovinare da una lista, per rendere il gioco variabile e interessante.
 Voglio mostrare lo stato parziale della parola in base alle lettere indovinate, per guidare i giocatori nel gioco.

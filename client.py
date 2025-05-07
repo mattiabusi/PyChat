@@ -7,7 +7,7 @@ import time
 from dearpygui import dearpygui as dpg  # Libreria per l'interfaccia grafica
 
 # Configurazione di rete del client
-INDIRIZZO_SERVER = '192.168.1.50'  # IP del server a cui connettersi
+INDIRIZZO_SERVER = '192.168.203.69'  # IP del server a cui connettersi
 PORTA_SERVER = 12345  # Porta di ascolto del server
 client = None  # Socket per la connessione al server
 soprannome = ""  # Nickname del giocatore
@@ -79,13 +79,13 @@ def ricevi_messaggi():
                 registra_messaggio(messaggio)
         except Exception as e:
             if connesso:
-                registra_messaggio(f"❌ Errore di connessione: {str(e)}")
+                registra_messaggio(f" Errore di connessione: {str(e)}")
             break
     
     # Se la connessione cade imprevistamente
     if connesso:
         connesso = False
-        registra_messaggio("❌ Connessione al server persa.")
+        registra_messaggio(" Connessione al server persa.")
         dpg.configure_item("PulsanteRiconnessione", show=True)
 
 def invia_messaggio():
@@ -94,7 +94,7 @@ def invia_messaggio():
     """
     global soprannome, connesso
     if not connesso:
-        registra_messaggio("❌ Non sei connesso al server.")
+        registra_messaggio(" Non sei connesso al server.")
         return
     
     # Prende il messaggio dall'input
@@ -107,11 +107,11 @@ def invia_messaggio():
         # Comandi locali (gestiti dal client)
         if messaggio == "/clear" or messaggio == "/pulisci":
             dpg.delete_item("ScorrimentoChat", children_only=True)
-            registra_messaggio("🧹 Chat pulita.")
+            registra_messaggio(" Chat pulita.")
         elif messaggio == "/nome":
-            registra_messaggio(f"👤 Il tuo soprannome è: {soprannome}")
+            registra_messaggio(f" Il tuo soprannome è: {soprannome}")
         elif messaggio == "/time" or messaggio == "/ora":
-            registra_messaggio(f"🕒 Orario attuale: {datetime.datetime.now().strftime('%H:%M:%S')}")
+            registra_messaggio(f" Orario attuale: {datetime.datetime.now().strftime('%H:%M:%S')}")
         elif messaggio == "/exit" or messaggio == "/esci":
             termina_gioco()
         else:
@@ -119,13 +119,13 @@ def invia_messaggio():
             try:
                 client.sendall(messaggio.encode())
             except:
-                registra_messaggio("❌ Errore durante l'invio del comando.")
+                registra_messaggio(" Errore durante l'invio del comando.")
     else:
         # Messaggio normale da inviare al server
         try:
             client.sendall(messaggio.encode())
         except:
-            registra_messaggio("❌ Errore durante l'invio.")
+            registra_messaggio(" Errore durante l'invio.")
     
     # Pulisce l'input dopo l'invio
     dpg.set_value("InputTesto", "")
@@ -140,13 +140,13 @@ def connetti_al_server():
     
     # Validazione del nickname
     if not soprannome:
-        registra_messaggio("❌ Inserisci un soprannome valido.")
+        registra_messaggio(" Inserisci un soprannome valido.")
         return
     if len(soprannome) < 3:
-        registra_messaggio("❌ Il soprannome deve avere almeno 3 caratteri.")
+        registra_messaggio(" Il soprannome deve avere almeno 3 caratteri.")
         return
     
-    registra_messaggio(f"🔄 Tentativo di connessione al server {INDIRIZZO_SERVER}:{PORTA_SERVER}...")
+    registra_messaggio(f" Tentativo di connessione al server {INDIRIZZO_SERVER}:{PORTA_SERVER}...")
     
     try:
         # Crea il socket e tenta la connessione
@@ -158,9 +158,9 @@ def connetti_al_server():
         client.sendall(soprannome.encode())
         
         connesso = True
-        registra_messaggio("✅ Connessione al server riuscita!")
+        registra_messaggio(" Connessione al server riuscita!")
     except Exception as e:
-        registra_messaggio(f"❌ Connessione fallita: {str(e)}")
+        registra_messaggio(f" Connessione fallita: {str(e)}")
         return
     
     # Avvia il thread per ricevere i messaggi
@@ -170,7 +170,7 @@ def connetti_al_server():
     dpg.hide_item("FinestraLogin")
     dpg.show_item("FinestraGioco")
     dpg.configure_item("PulsanteRiconnessione", show=False)
-    registra_messaggio(f"🎉 Benvenuto nel gioco, {soprannome}! Indovina la parola segreta.")
+    registra_messaggio(f" Benvenuto nel gioco, {soprannome}! Indovina la parola segreta.")
 
 def termina_gioco():
     """
@@ -186,7 +186,7 @@ def termina_gioco():
     except:
         pass
     
-    registra_messaggio("👋 Uscita dal gioco.")
+    registra_messaggio(" Uscita dal gioco.")
     time.sleep(1)  # Attesa per visualizzare il messaggio
     dpg.stop_dearpygui()
     sys.exit()
@@ -242,7 +242,7 @@ def main():
             
             # Area classifica
             with dpg.child_window(width=230, height=450):
-                dpg.add_text("🏆 Classifica:", bullet=True)
+                dpg.add_text(" Classifica:", bullet=True)
                 with dpg.table(tag="TabellaClassifica", header_row=True, resizable=True,
                              borders_innerH=True, borders_outerH=True, borders_innerV=True, borders_outerV=True,
                              width=220, height=400):
@@ -264,12 +264,12 @@ def main():
         
         # Sezione comandi e istruzioni
         with dpg.collapsing_header(label="Comandi e istruzioni", default_open=True):
-            dpg.add_text("🎯 Come giocare:")
+            dpg.add_text(" Come giocare:")
             dpg.add_text("1. Indovina la parola segreta proposta dal server")
             dpg.add_text("2. Puoi provare a indovinare singole lettere o l'intera parola")
             dpg.add_text("3. Chi indovina per primo la parola guadagna un punto!")
             dpg.add_separator()
-            dpg.add_text("📋 Comandi disponibili sul server:")
+            dpg.add_text(" Comandi disponibili sul server:")
             dpg.add_text("/help - Mostra tutti i comandi disponibili")
             dpg.add_text("/score o /classifica - Mostra la classifica")
             dpg.add_text("/online - Mostra giocatori connessi")

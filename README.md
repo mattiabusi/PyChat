@@ -92,34 +92,33 @@ Personalizza i colori e lo stile modificando i parametri nel tema grafico nel fi
 
 ## User Stories per Giocatori
 
-Come giocatore, voglio poter inserire un nickname univoco così da essere identificato durante la partita
-Come giocatore, voglio vedere la parola parzialmente rivelata (con underscore) così da capire quali lettere mancano
-Come giocatore, voglio avere un'interfaccia chiara che mi mostri la chat e la classifica così da seguire il gioco facilmente
-Come giocatore, voglio vedere un elenco dei comandi disponibili così da conoscere tutte le funzionalità
-Come giocatore, voglio poter provare a indovinare l'intera parola così da guadagnare punti quando sono sicuro
-Come giocatore, voglio essere notificato quando qualcun altro indovina una lettera così da seguire i progressi della partita
-Come giocatore, voglio poter chattare con gli altri giocatori così da socializzare durante la partita
-Come giocatore, voglio ricevere notifiche quando altri giocatori entrano o escono così da sapere chi sta giocando
-Come giocatore, voglio poter pulire la chat così da migliorare la leggibilità
+- Come giocatore, voglio poter inserire un nickname univoco così da essere identificato durante la partita
+- Come giocatore, voglio vedere la parola parzialmente rivelata (con underscore) così da capire quali lettere mancano
+- Come giocatore, voglio avere un'interfaccia chiara che mi mostri la chat e la classifica così da seguire il gioco -facilmente
+- Come giocatore, voglio vedere un elenco dei comandi disponibili così da conoscere tutte le funzionalità
+- Come giocatore, voglio poter provare a indovinare l'intera parola così da guadagnare punti quando sono sicuro
+- Come giocatore, voglio essere notificato quando qualcun altro indovina una lettera così da seguire i progressi della partita
+- Come giocatore, voglio poter chattare con gli altri giocatori così da socializzare durante la partita
+- Come giocatore, voglio ricevere notifiche quando altri giocatori entrano o escono così da sapere chi sta giocando
+- Come giocatore, voglio poter pulire la chat così da migliorare la leggibilità
 
 
 ## User Stories per Amministratori
 
-Come amministratore, voglio poter espellere giocatori problematici così da mantenere un ambiente di gioco positivo
-Come amministratore, voglio che i punteggi vengano salvati in un file così da mantenerli tra le sessioni di gioco
-Come amministratore, voglio vedere messaggi di log sul server così da monitorare l'attività del gioco
-Come amministratore, voglio essere informato quando inizia una nuova partita così da verificare il corretto funzionamento del gioco
+- Come amministratore, voglio poter espellere giocatori problematici così da mantenere un ambiente di gioco positivo
+- Come amministratore, voglio che i punteggi vengano salvati in un file così da mantenerli tra le sessioni di gioco
+- Come amministratore, voglio vedere messaggi di log sul server così da monitorare l'attività del gioco
+- Come amministratore, voglio essere informato quando inizia una nuova partita così da verificare il corretto funzionamento del gioco
 
 ## User Stories Tecniche
 
-Come sviluppatore, voglio che il client gestisca correttamente la perdita di connessione così da permettere ai giocatori di riconnettersi
-Come sviluppatore, voglio che il server gestisca in modo thread-safe le operazioni critiche così da evitare race condition
-Come sviluppatore, voglio fornire un'interfaccia grafica reattiva con DearPyGUI così da offrire una buona esperienza utente
-Come sviluppatore, voglio implementare un sistema di rotazione casuale delle parole così da mantenere il gioco interessante
+- Come sviluppatore, voglio che il client gestisca correttamente la perdita di connessione così da permettere ai giocatori di riconnettersi
+- Come sviluppatore, voglio che il server gestisca in modo thread-safe le operazioni critiche così da evitare race condition
+- Come sviluppatore, voglio fornire un'interfaccia grafica reattiva con DearPyGUI così da offrire una buona esperienza utente
+- Come sviluppatore, voglio implementare un sistema di rotazione casuale delle parole così da mantenere il gioco interessante
 
+# Link presentazione canva: 
 
-
-link presentazione canva: 
 https://www.canva.com/design/DAGms47q7WU/O0z9AnNej4XyCsrWPS_mtw/edit?utm_content=DAGms47q7WU&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
 
 

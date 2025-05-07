@@ -1,14 +1,14 @@
-# Indovina la Parola - Gioco Multiplayer in Python
+# Indovina la Parola - Gioco Multiplayer
 
 Un gioco multiplayer basato su socket che permette a più giocatori di connettersi a un server e competere per indovinare una parola segreta. Il gioco include un'interfaccia grafica creata con DearPyGUI.
 
 ## Caratteristiche Principali
 
-- **Gameplay semplice ma coinvolgente**: indovina una parola segreta, lettera per lettera o provando la soluzione completa
+- **Gameplay semplice**: indovina una parola segreta, lettera per lettera o provando la soluzione completa
 - **Multiplayer in tempo reale**: gioca con altri partecipanti sulla stessa rete
 - **Chat integrata**: comunica con gli altri giocatori durante la partita
 - **Sistema di punteggi**: viene tenuta traccia dei punteggi tra le sessioni di gioco
-- **Interfaccia grafica moderna**: realizzata con DearPyGUI per un'esperienza utente fluida
+- **Interfaccia grafica**: realizzata con DearPyGUI per un'esperienza utente fluida
 - **Comandi intuitivi**: utilizza un sistema di comandi semplice con prefisso "!" per i tentativi
 
 ## Struttura del Progetto

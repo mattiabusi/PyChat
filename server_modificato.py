@@ -17,6 +17,7 @@ game_over = False  # Stato del gioco (True quando qualcuno ha indovinato)
 lock = threading.Lock()  # Semaforo per la sincronizzazione tra thread
 SCORES_FILE = "scores.txt"  # File per salvare i punteggi
 
+
 def broadcast(message, exclude_conn=None):
     """
     Invia un messaggio a tutti i client connessi
@@ -31,6 +32,7 @@ def broadcast(message, exclude_conn=None):
             except:
                 pass  # Ignora errori di invio
 
+
 def send_score_update():
     """
     Invia a tutti i client la classifica aggiornata
@@ -39,7 +41,7 @@ def send_score_update():
     sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
     # Formatta i dati della classifica
-    score_data = "[SCORE_DATA]"  # Marcatore per identificare i dati della classifica
+    score_data = "[DATI_CLASSIFICA]"  # Marcatore per identificare i dati della classifica
     for name, points in sorted_scores:
         score_data += f"{name}:{points}\n"  # Aggiunge ogni punteggio
 
@@ -49,6 +51,7 @@ def send_score_update():
             conn.sendall(score_data.encode())
         except:
             pass  # Ignora errori di invio
+
 
 def get_word_progress():
     """
@@ -63,6 +66,7 @@ def get_word_progress():
         else:
             progress.append("_")  # Trattino per lettere non indovinate
     return " ".join(progress)  # Unisce con spazi
+
 
 def handle_client(conn, addr):
     """
@@ -104,11 +108,18 @@ def handle_client(conn, addr):
 
         # Loop principale di gestione messaggi
         while True:
-            msg = conn.recv(1024).decode().strip().lower()
+            msg = conn.recv(1024).decode().strip()
+            if not msg:
+                continue
+
+            # Conserva il messaggio originale per il broadcast
+            original_msg = msg
+            # Converte in minuscolo solo per la gestione del gioco
+            msg_lower = msg.lower()
 
             # Gestione comandi
-            if msg.startswith("/"):
-                handle_command(msg, conn, nickname)
+            if msg_lower.startswith("/"):
+                handle_command(msg_lower, conn, nickname)
                 continue
 
             # Se il gioco è in pausa tra una partita e l'altra
@@ -116,13 +127,22 @@ def handle_client(conn, addr):
                 conn.sendall(" Attendi che inizi una nuova partita...\n".encode())
                 continue
 
-            # Gestione tentativi (lettera singola o parola intera)
-            if len(msg) == 1 and msg.isalpha():
-                handle_letter_guess(msg, conn, nickname)
-            elif len(msg) > 1 and msg.isalpha():
-                handle_word_guess(msg, conn, nickname)
+            # Prefisso per i tentativi di indovinare
+            guess_prefix = "!"
+
+            # Gestione tentativi (con prefisso !)
+            if msg_lower.startswith(guess_prefix):
+                guess = msg_lower[1:].strip()  # Rimuove il prefisso
+
+                if len(guess) == 1 and guess.isalpha():
+                    handle_letter_guess(guess, conn, nickname)
+                elif len(guess) > 1 and guess.isalpha():
+                    handle_word_guess(guess, conn, nickname)
+                else:
+                    conn.sendall(" Formato non valido. Usa !lettera o !parola\n".encode())
             else:
-                broadcast(f" {nickname}: {msg}\n", exclude_conn=None)
+                # Messaggi normali di chat (senza il prefisso speciale)
+                broadcast(f" {nickname}: {original_msg}\n")
 
     except Exception as e:
         print(f"[ERRORE] {e}")
@@ -138,6 +158,7 @@ def handle_client(conn, addr):
             conn.close()
         except:
             pass
+
 
 def handle_letter_guess(letter, conn, nickname):
     """
@@ -173,6 +194,7 @@ def handle_letter_guess(letter, conn, nickname):
             conn.sendall(f" La lettera '{letter}' non è presente nella parola.\n".encode())
             broadcast(f" {nickname} ha provato la lettera '{letter}' (non presente)\n", exclude_conn=conn)
 
+
 def handle_word_guess(word, conn, nickname):
     """
     Gestisce un tentativo di indovinare la parola intera
@@ -205,6 +227,7 @@ def handle_word_guess(word, conn, nickname):
             conn.sendall(" Non è la parola corretta. Prova ancora!\n".encode())
             broadcast(f" {nickname} ha provato la parola '{word}' (errata)\n", exclude_conn=conn)
 
+
 def handle_command(msg, conn, nickname):
     """
     Gestisce i comandi speciali inviati dai client
@@ -229,8 +252,10 @@ def handle_command(msg, conn, nickname):
         help_text += "/score o /classifica - mostra la classifica dei giocatori\n"
         help_text += "/hint - mostra un suggerimento (una lettera casuale non ancora indovinata)\n"
         help_text += "/online - mostra i giocatori connessi\n"
-        help_text += "\nPer giocare: scrivi una lettera o prova a indovinare la parola intera\n"
-        help_text += "Per chattare: scrivi un messaggio qualsiasi (non una lettera o parola)\n"
+        help_text += "\nPer giocare:\n"
+        help_text += "!lettera - prova una lettera (es: !a)\n"
+        help_text += "!parola - prova a indovinare la parola intera (es: !casa)\n"
+        help_text += "Per chattare: scrivi un messaggio qualsiasi senza ! iniziale\n"
 
         conn.sendall(help_text.encode())
 
@@ -263,9 +288,15 @@ def handle_command(msg, conn, nickname):
                 return
         conn.sendall(f" Giocatore {target} non trovato.\n".encode())
 
+    elif msg == "/exit" or msg == "/esci":
+        # Gestione dell'uscita dal server
+        conn.sendall(" Disconnessione in corso...\n".encode())
+        raise Exception("Disconnessione richiesta")
+
     else:
         # Comando non riconosciuto
         conn.sendall(" Comando sconosciuto. Scrivi /help per assistenza.\n".encode())
+
 
 def restart_game():
     """
@@ -279,6 +310,7 @@ def restart_game():
         broadcast(f"\n Nuova partita iniziata! Indovina la parola ({len(current_word)} lettere)\n")
         broadcast(f"Parola: {get_word_progress()}\n")
         print(f"[NUOVA PARTITA] Parola segreta: {current_word}")
+
 
 def load_scores():
     """
@@ -296,6 +328,7 @@ def load_scores():
     except Exception as e:
         print(f"[ERRORE] Impossibile caricare i punteggi: {e}")
 
+
 def save_scores():
     """
     Salva i punteggi nel file di salvataggio
@@ -306,6 +339,7 @@ def save_scores():
                 f.write(f"{name}:{points}\n")
     except Exception as e:
         print(f"[ERRORE] Impossibile salvare i punteggi: {e}")
+
 
 def main():
     """
@@ -348,6 +382,7 @@ def main():
         server.close()
         print("[SERVER] Arrestato.")
         save_scores()  # Salva i punteggi prima di chiudere
+
 
 if __name__ == "__main__":
     main()
